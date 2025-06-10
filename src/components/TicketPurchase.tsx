@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, MapPin, Clock, Users, Minus, Plus, CreditCard } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Minus, Plus, CreditCard, Lock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import PasswordProtectedTicket from "./PasswordProtectedTicket";
 
 interface TicketType {
   name: string;
@@ -14,6 +15,8 @@ interface TicketType {
   quantity: number;
   sold: number;
   description?: string;
+  isPasswordProtected?: boolean;
+  password?: string;
 }
 
 interface Event {
@@ -34,6 +37,7 @@ interface TicketPurchaseProps {
 const TicketPurchase = ({ event }: TicketPurchaseProps) => {
   const [selectedTickets, setSelectedTickets] = useState<Record<string, number>>({});
   const [paymentMethod, setPaymentMethod] = useState("paypal");
+  const [unlockedTickets, setUnlockedTickets] = useState<Record<string, boolean>>({});
 
   const updateTicketQuantity = (ticketName: string, quantity: number) => {
     if (quantity === 0) {
@@ -42,6 +46,10 @@ const TicketPurchase = ({ event }: TicketPurchaseProps) => {
     } else {
       setSelectedTickets({ ...selectedTickets, [ticketName]: quantity });
     }
+  };
+
+  const handleTicketUnlock = (ticketName: string) => {
+    setUnlockedTickets({ ...unlockedTickets, [ticketName]: true });
   };
 
   const getTotalPrice = () => {
@@ -130,52 +138,65 @@ const TicketPurchase = ({ event }: TicketPurchaseProps) => {
             {event.ticketTypes.map((ticket) => {
               const available = ticket.quantity - ticket.sold;
               const selected = selectedTickets[ticket.name] || 0;
+              const isUnlocked = !ticket.isPasswordProtected || unlockedTickets[ticket.name];
               
               return (
-                <Card key={ticket.name} className="bg-white/90 backdrop-blur-sm">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold">{ticket.name}</h3>
-                          <Badge className="bg-green-100 text-green-700">
-                            ${ticket.price}
-                          </Badge>
-                          <Badge variant="outline">
-                            {available} left
-                          </Badge>
+                <PasswordProtectedTicket
+                  key={ticket.name}
+                  ticket={ticket}
+                  onUnlock={() => handleTicketUnlock(ticket.name)}
+                >
+                  <Card className="bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-lg font-semibold">{ticket.name}</h3>
+                            <Badge className="bg-green-100 text-green-700">
+                              ${ticket.price}
+                            </Badge>
+                            <Badge variant="outline">
+                              {available} left
+                            </Badge>
+                            {ticket.isPasswordProtected && (
+                              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                <Lock className="h-3 w-3 mr-1" />
+                                Protected
+                              </Badge>
+                            )}
+                          </div>
+                          {ticket.description && (
+                            <p className="text-gray-600 text-sm">{ticket.description}</p>
+                          )}
                         </div>
-                        {ticket.description && (
-                          <p className="text-gray-600 text-sm">{ticket.description}</p>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center border rounded-lg">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateTicketQuantity(ticket.name, Math.max(0, selected - 1))}
-                            disabled={selected === 0}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="px-4 py-2 min-w-[3rem] text-center font-medium">
-                            {selected}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateTicketQuantity(ticket.name, selected + 1)}
-                            disabled={selected >= available}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
+                        
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center border rounded-lg">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => updateTicketQuantity(ticket.name, Math.max(0, selected - 1))}
+                              disabled={selected === 0}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="px-4 py-2 min-w-[3rem] text-center font-medium">
+                              {selected}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => updateTicketQuantity(ticket.name, selected + 1)}
+                              disabled={selected >= available}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </PasswordProtectedTicket>
               );
             })}
           </div>
