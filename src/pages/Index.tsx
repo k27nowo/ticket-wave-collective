@@ -12,9 +12,7 @@ import { Link } from "react-router-dom";
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Mock events data
-  const events = [
+  const [events, setEvents] = useState([
     {
       id: 1,
       title: "Summer Music Festival 2024",
@@ -23,9 +21,10 @@ const Index = () => {
       time: "18:00",
       location: "Central Park, New York",
       image: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&h=400&fit=crop",
-      ticketsAvailable: 150,
-      totalTickets: 200,
-      price: 45
+      ticketTypes: [
+        { name: "Early Bird", price: 35, quantity: 50, sold: 35 },
+        { name: "Regular", price: 45, quantity: 150, sold: 65 }
+      ]
     },
     {
       id: 2,
@@ -35,15 +34,34 @@ const Index = () => {
       time: "09:00",
       location: "Convention Center, San Francisco",
       image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop",
-      ticketsAvailable: 75,
-      totalTickets: 100,
-      price: 299
+      ticketTypes: [
+        { name: "Standard", price: 299, quantity: 75, sold: 25 },
+        { name: "VIP", price: 499, quantity: 25, sold: 0 }
+      ]
     }
-  ];
+  ]);
+
+  const handleEventCreated = (newEvent: any) => {
+    const eventWithId = {
+      ...newEvent,
+      id: events.length + 1
+    };
+    setEvents([...events, eventWithId]);
+    setIsCreateModalOpen(false);
+  };
 
   const filteredEvents = events.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     event.location.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Calculate stats based on new ticket structure
+  const totalTicketsSold = events.reduce((sum, event) => 
+    sum + event.ticketTypes.reduce((ticketSum, ticket) => ticketSum + ticket.sold, 0), 0
+  );
+
+  const totalRevenue = events.reduce((sum, event) => 
+    sum + event.ticketTypes.reduce((ticketSum, ticket) => ticketSum + (ticket.sold * ticket.price), 0), 0
   );
 
   return (
@@ -98,9 +116,7 @@ const Index = () => {
               <Users className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {events.reduce((sum, event) => sum + (event.totalTickets - event.ticketsAvailable), 0)}
-              </div>
+              <div className="text-2xl font-bold">{totalTicketsSold}</div>
               <p className="text-xs text-muted-foreground">Across all events</p>
             </CardContent>
           </Card>
@@ -111,13 +127,7 @@ const Index = () => {
               <CreditCard className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                $
-                {events.reduce((sum, event) => {
-                  const soldTickets = event.totalTickets - event.ticketsAvailable;
-                  return sum + (soldTickets * event.price);
-                }, 0).toLocaleString()}
-              </div>
+              <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Total earnings</p>
             </CardContent>
           </Card>
@@ -186,7 +196,8 @@ const Index = () => {
       {/* Create Event Modal */}
       <CreateEventModal 
         open={isCreateModalOpen} 
-        onOpenChange={setIsCreateModalOpen} 
+        onOpenChange={setIsCreateModalOpen}
+        onEventCreated={handleEventCreated}
       />
     </div>
   );
