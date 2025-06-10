@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Calendar, MapPin, Users, Settings, CreditCard, BarChart3 } from "lucide-react";
+import { Plus, Search, Calendar, MapPin, Users, Settings, CreditCard, BarChart3, Mail } from "lucide-react";
 import EventCard from "@/components/EventCard";
 import CreateEventModal from "@/components/CreateEventModal";
 import { Link } from "react-router-dom";
@@ -80,6 +79,13 @@ const Index = () => {
                 <Button variant="outline" className="flex items-center space-x-2">
                   <BarChart3 className="h-4 w-4" />
                   <span>Ticket Tracking</span>
+                </Button>
+              </Link>
+              
+              <Link to="/newsletter">
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Mail className="h-4 w-4" />
+                  <span>Newsletter</span>
                 </Button>
               </Link>
               
