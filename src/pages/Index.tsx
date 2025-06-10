@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Calendar, MapPin, Users, Settings, CreditCard } from "lucide-react";
+import { Plus, Search, Calendar, MapPin, Users, Settings, CreditCard, BarChart3 } from "lucide-react";
 import EventCard from "@/components/EventCard";
 import CreateEventModal from "@/components/CreateEventModal";
 import { Link } from "react-router-dom";
@@ -76,6 +76,13 @@ const Index = () => {
             </div>
             
             <div className="flex items-center space-x-4">
+              <Link to="/ticket-tracking">
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <BarChart3 className="h-4 w-4" />
+                  <span>Ticket Tracking</span>
+                </Button>
+              </Link>
+              
               <Link to="/payment-settings">
                 <Button variant="outline" className="flex items-center space-x-2">
                   <CreditCard className="h-4 w-4" />
