@@ -145,7 +145,7 @@ const SecureEventCard = ({ event }: SecureEventCardProps) => {
             className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
           >
             <Ticket className="h-4 w-4 mr-1" />
-            View Tickets
+            View Event
           </Button>
         </div>
       </CardContent>
