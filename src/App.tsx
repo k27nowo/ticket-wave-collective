@@ -13,6 +13,7 @@ import PaymentSettings from "./pages/PaymentSettings";
 import TicketTracking from "./pages/TicketTracking";
 import Newsletter from "./pages/Newsletter";
 import Team from "./pages/Team";
+import AcceptTeamInvitation from "./pages/AcceptTeamInvitation";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -31,6 +32,11 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/public/event/:eventId" element={<PublicEvent />} />
+            <Route path="/team/accept-invitation" element={
+              <ProtectedRoute>
+                <AcceptTeamInvitation />
+              </ProtectedRoute>
+            } />
             <Route path="/" element={
               <ProtectedRoute>
                 <SecureIndex />

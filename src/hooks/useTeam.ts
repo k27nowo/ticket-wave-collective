@@ -56,7 +56,8 @@ export const useTeam = () => {
     mutationFn: async ({ email, role }: { email: string; role: string }) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      // First create the invitation in the database
+      const { data: invitation, error } = await supabase
         .from('team_invitations')
         .insert({
           team_owner_id: user.id,
@@ -67,14 +68,51 @@ export const useTeam = () => {
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Get user profile for the team owner name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      const teamOwnerName = profile?.full_name || 'Team Owner';
+      const appUrl = window.location.origin;
+
+      // Send the invitation email
+      const { error: emailError } = await supabase.functions.invoke('send-team-invitation', {
+        body: {
+          email,
+          role,
+          teamOwnerName,
+          invitationToken: invitation.token,
+          appUrl,
+        },
+      });
+
+      if (emailError) {
+        console.error('Error sending invitation email:', emailError);
+        // Don't throw here - the invitation was created successfully
+        // Just log the error and show a warning to the user
+      }
+
+      return { invitation, emailSent: !emailError };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['team-invitations'] });
-      toast({
-        title: "Invitation Sent",
-        description: `Invitation sent to ${data.email} with role: ${data.role}`,
-      });
+      
+      if (data.emailSent) {
+        toast({
+          title: "Invitation Sent",
+          description: `Invitation sent to ${data.invitation.email} with role: ${data.invitation.role}`,
+        });
+      } else {
+        toast({
+          title: "Invitation Created",
+          description: `Invitation created for ${data.invitation.email}, but email sending failed. Please contact them directly.`,
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
       toast({
