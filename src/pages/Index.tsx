@@ -1,17 +1,20 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Calendar, MapPin, Users, Settings, CreditCard, BarChart3, Mail, UserPlus } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, Calendar, MapPin, Users, Settings, CreditCard, BarChart3, Mail, UserPlus, LogOut, User } from "lucide-react";
 import EventCard from "@/components/EventCard";
 import CreateEventModal from "@/components/CreateEventModal";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  
   const [events, setEvents] = useState([
     {
       id: 1,
@@ -63,6 +66,10 @@ const Index = () => {
   const totalRevenue = events.reduce((sum, event) => 
     sum + event.ticketTypes.reduce((ticketSum, ticket) => ticketSum + (ticket.sold * ticket.price), 0), 0
   );
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
@@ -118,6 +125,23 @@ const Index = () => {
                 <Plus className="h-4 w-4 mr-2" />
                 Create Event
               </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <User className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem disabled>
+                    {user?.email}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
