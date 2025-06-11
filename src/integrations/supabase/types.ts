@@ -237,6 +237,75 @@ export type Database = {
         }
         Relationships: []
       }
+      team_invitations: {
+        Row: {
+          accepted_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invited_at: string
+          role: string
+          status: string | null
+          team_owner_id: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          invited_at?: string
+          role: string
+          status?: string | null
+          team_owner_id: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_at?: string
+          role?: string
+          status?: string | null
+          team_owner_id?: string
+          token?: string
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          email: string
+          id: string
+          joined_at: string
+          member_id: string
+          role: string
+          status: string | null
+          team_owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          joined_at?: string
+          member_id: string
+          role: string
+          status?: string | null
+          team_owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          joined_at?: string
+          member_id?: string
+          role?: string
+          status?: string | null
+          team_owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ticket_types: {
         Row: {
           created_at: string
@@ -289,7 +358,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      accept_team_invitation: {
+        Args: { invitation_token: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
