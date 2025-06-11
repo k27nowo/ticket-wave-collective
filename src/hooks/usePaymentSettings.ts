@@ -32,7 +32,15 @@ export const usePaymentSettings = () => {
 
       if (error) throw error;
 
-      setPaymentSettings(data || []);
+      // Transform the database response to match our interface
+      const transformedData: PaymentSettingsData[] = (data || []).map(item => ({
+        id: item.id,
+        provider: item.provider as 'paypal' | 'stripe',
+        is_enabled: item.is_enabled,
+        settings: (item.settings as any) || {}
+      }));
+
+      setPaymentSettings(transformedData);
     } catch (error: any) {
       console.error('Error fetching payment settings:', error);
       toast({
@@ -65,17 +73,25 @@ export const usePaymentSettings = () => {
 
       if (error) throw error;
 
+      // Transform the database response to match our interface
+      const transformedData: PaymentSettingsData = {
+        id: data.id,
+        provider: data.provider as 'paypal' | 'stripe',
+        is_enabled: data.is_enabled,
+        settings: (data.settings as any) || {}
+      };
+
       // Update local state
       setPaymentSettings(prev => {
         const existing = prev.find(p => p.provider === settingsData.provider);
         if (existing) {
-          return prev.map(p => p.provider === settingsData.provider ? data : p);
+          return prev.map(p => p.provider === settingsData.provider ? transformedData : p);
         } else {
-          return [...prev, data];
+          return [...prev, transformedData];
         }
       });
 
-      return { data, error: null };
+      return { data: transformedData, error: null };
     } catch (error: any) {
       console.error('Error saving payment settings:', error);
       return { error: error.message };
