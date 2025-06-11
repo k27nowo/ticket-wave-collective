@@ -2,7 +2,7 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Event } from "@/types/event";
-import { getMockEvents } from "@/services/eventService";
+import { supabase } from "@/integrations/supabase/client";
 import PublicEventPage from "@/components/PublicEventPage";
 import NotFound from "./NotFound";
 
@@ -14,10 +14,23 @@ const PublicEvent = () => {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        // In a real implementation, this would fetch from the database
-        const events = getMockEvents();
-        const foundEvent = events.find(e => e.id === eventId);
-        setEvent(foundEvent || null);
+        console.log('Fetching public event:', eventId);
+        
+        const { data: eventData, error } = await supabase
+          .from('events')
+          .select(`
+            *,
+            ticket_types(*)
+          `)
+          .eq('id', eventId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching event:', error);
+          setEvent(null);
+        } else {
+          setEvent(eventData);
+        }
       } catch (error) {
         console.error('Error fetching event:', error);
         setEvent(null);

@@ -1,5 +1,6 @@
 
 import { Event, CreateEventData } from '@/types/event';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const getMockEvents = (): Event[] => {
@@ -44,29 +45,29 @@ export const getMockEvents = (): Event[] => {
 
 export const fetchEventsFromDatabase = async (userId?: string): Promise<Event[]> => {
   try {
-    console.log('Fetching events...');
+    console.log('Fetching events from database...');
     
-    // Since we don't have the actual tables set up yet, we'll use mock data
-    // In a real implementation, this would be:
-    // const { data: eventsData, error } = await supabase
-    //   .from('events')
-    //   .select(`
-    //     *,
-    //     ticket_types(*)
-    //   `)
-    //   .order('created_at', { ascending: false });
+    let query = supabase
+      .from('events')
+      .select(`
+        *,
+        ticket_types(*)
+      `)
+      .order('created_at', { ascending: false });
 
-    console.log('Using mock data for events');
-    const mockEvents = getMockEvents();
-    
-    // Set user_id for mock events if user is provided
+    // If userId is provided, filter by user
     if (userId) {
-      mockEvents.forEach(event => {
-        event.user_id = userId;
-      });
+      query = query.eq('user_id', userId);
     }
-    
-    return mockEvents;
+
+    const { data: eventsData, error } = await query;
+
+    if (error) {
+      console.error('Error fetching events:', error);
+      throw error;
+    }
+
+    return eventsData || [];
   } catch (error) {
     console.error('Error fetching events:', error);
     toast.error('Failed to load events');
@@ -74,14 +75,211 @@ export const fetchEventsFromDatabase = async (userId?: string): Promise<Event[]>
   }
 };
 
+export const createEventInDatabase = async (eventData: CreateEventData, userId: string): Promise<Event> => {
+  try {
+    console.log('Creating event in database:', eventData);
+
+    // Create the event
+    const { data: eventResult, error: eventError } = await supabase
+      .from('events')
+      .insert({
+        title: eventData.title.trim(),
+        description: eventData.description?.trim() || '',
+        date: `${eventData.date}T${eventData.time}`,
+        location: eventData.location.trim(),
+        image_url: eventData.image_url || '',
+        user_id: userId
+      })
+      .select()
+      .single();
+
+    if (eventError) throw eventError;
+
+    // Create ticket types
+    const ticketTypesData = eventData.ticketTypes.map(ticket => ({
+      event_id: eventResult.id,
+      name: ticket.name.trim(),
+      price: ticket.price,
+      quantity: ticket.quantity,
+      description: ticket.description?.trim() || '',
+      is_password_protected: ticket.isPasswordProtected || false,
+      password_hash: ticket.password || ''
+    }));
+
+    const { data: ticketTypes, error: ticketError } = await supabase
+      .from('ticket_types')
+      .insert(ticketTypesData)
+      .select();
+
+    if (ticketError) throw ticketError;
+
+    // Return the complete event with ticket types
+    return {
+      ...eventResult,
+      ticket_types: ticketTypes
+    };
+  } catch (error: any) {
+    console.error('Error creating event:', error);
+    toast.error('Failed to create event: ' + error.message);
+    throw error;
+  }
+};
+
+export const updateEventInDatabase = async (eventId: string, eventData: Partial<CreateEventData>): Promise<Event> => {
+  try {
+    console.log('Updating event in database:', eventId, eventData);
+
+    const updateData: any = {};
+    if (eventData.title) updateData.title = eventData.title.trim();
+    if (eventData.description !== undefined) updateData.description = eventData.description?.trim() || '';
+    if (eventData.date && eventData.time) updateData.date = `${eventData.date}T${eventData.time}`;
+    if (eventData.location) updateData.location = eventData.location.trim();
+    if (eventData.image_url !== undefined) updateData.image_url = eventData.image_url;
+    updateData.updated_at = new Date().toISOString();
+
+    const { data: eventResult, error: eventError } = await supabase
+      .from('events')
+      .update(updateData)
+      .eq('id', eventId)
+      .select()
+      .single();
+
+    if (eventError) throw eventError;
+
+    // Handle ticket types if provided
+    if (eventData.ticketTypes) {
+      // Delete existing ticket types
+      await supabase
+        .from('ticket_types')
+        .delete()
+        .eq('event_id', eventId);
+
+      // Create new ticket types
+      const ticketTypesData = eventData.ticketTypes.map(ticket => ({
+        event_id: eventId,
+        name: ticket.name.trim(),
+        price: ticket.price,
+        quantity: ticket.quantity,
+        description: ticket.description?.trim() || '',
+        is_password_protected: ticket.isPasswordProtected || false,
+        password_hash: ticket.password || ''
+      }));
+
+      const { data: ticketTypes, error: ticketError } = await supabase
+        .from('ticket_types')
+        .insert(ticketTypesData)
+        .select();
+
+      if (ticketError) throw ticketError;
+
+      return {
+        ...eventResult,
+        ticket_types: ticketTypes
+      };
+    }
+
+    // Fetch ticket types separately if not updating them
+    const { data: ticketTypes } = await supabase
+      .from('ticket_types')
+      .select('*')
+      .eq('event_id', eventId);
+
+    return {
+      ...eventResult,
+      ticket_types: ticketTypes || []
+    };
+  } catch (error: any) {
+    console.error('Error updating event:', error);
+    toast.error('Failed to update event: ' + error.message);
+    throw error;
+  }
+};
+
 export const verifyTicketPasswordInDatabase = async (ticketTypeId: string, password: string): Promise<boolean> => {
   try {
-    // For now, return true since we're using mock data
-    // In a real implementation, this would verify against the database
     console.log('Verifying ticket password for ticket:', ticketTypeId);
-    return true;
+    
+    const { data: ticketType, error } = await supabase
+      .from('ticket_types')
+      .select('password_hash')
+      .eq('id', ticketTypeId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching ticket type:', error);
+      return false;
+    }
+
+    // Simple password comparison (in production, you'd use proper password hashing)
+    return ticketType.password_hash === password;
   } catch (error) {
     console.error('Error verifying password:', error);
     return false;
+  }
+};
+
+export const createOrderInDatabase = async (orderData: {
+  eventId: string;
+  userId?: string;
+  totalAmount: number;
+  items: Array<{
+    ticketTypeId: string;
+    quantity: number;
+    pricePerTicket: number;
+  }>;
+}): Promise<string> => {
+  try {
+    console.log('Creating order in database:', orderData);
+
+    // Create the order
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        event_id: orderData.eventId,
+        user_id: orderData.userId || null,
+        total_amount: orderData.totalAmount,
+        status: 'completed'
+      })
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    // Create order items
+    const orderItemsData = orderData.items.map(item => ({
+      order_id: order.id,
+      ticket_type_id: item.ticketTypeId,
+      quantity: item.quantity,
+      price_per_ticket: item.pricePerTicket
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItemsData);
+
+    if (itemsError) throw itemsError;
+
+    // Update sold count for each ticket type
+    for (const item of orderData.items) {
+      const { error: updateError } = await supabase.rpc('increment_ticket_sold', {
+        ticket_type_id: item.ticketTypeId,
+        quantity: item.quantity
+      });
+
+      if (updateError) {
+        console.error('Error updating sold count:', updateError);
+        // Create a simpler update as fallback
+        await supabase
+          .from('ticket_types')
+          .update({ sold: supabase.sql`sold + ${item.quantity}` })
+          .eq('id', item.ticketTypeId);
+      }
+    }
+
+    return order.id;
+  } catch (error: any) {
+    console.error('Error creating order:', error);
+    toast.error('Failed to process order: ' + error.message);
+    throw error;
   }
 };

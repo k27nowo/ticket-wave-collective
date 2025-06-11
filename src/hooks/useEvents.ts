@@ -3,8 +3,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Event, CreateEventData } from '@/types/event';
-import { fetchEventsFromDatabase, verifyTicketPasswordInDatabase } from '@/services/eventService';
-import { createMockEvent, validateEventData } from '@/utils/eventHelpers';
+import { 
+  fetchEventsFromDatabase, 
+  verifyTicketPasswordInDatabase, 
+  createEventInDatabase, 
+  updateEventInDatabase 
+} from '@/services/eventService';
+import { validateEventData } from '@/utils/eventHelpers';
 
 export const useEvents = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -35,27 +40,9 @@ export const useEvents = () => {
     }
 
     try {
-      console.log('Creating event with data:', eventData);
-
-      // For now, we'll create a mock event since the database tables don't exist yet
-      // In a real implementation, this would be:
-      // const { data: newEvent, error: eventError } = await supabase
-      //   .from('events')
-      //   .insert({
-      //     title: eventData.title.trim(),
-      //     description: eventData.description?.trim() || '',
-      //     date: eventDateTime.toISOString(),
-      //     location: eventData.location.trim(),
-      //     image_url: eventData.image_url || '',
-      //     user_id: user.id
-      //   })
-      //   .select()
-      //   .single();
-
-      const newEvent = createMockEvent(eventData, user.id);
-
-      console.log('Mock event created:', newEvent);
-      toast.success('Event created successfully! (Note: This is mock data until database is set up)');
+      const newEvent = await createEventInDatabase(eventData, user.id);
+      console.log('Event created successfully:', newEvent);
+      toast.success('Event created successfully!');
       
       // Add to local state
       setEvents(prevEvents => [newEvent, ...prevEvents]);
@@ -63,7 +50,31 @@ export const useEvents = () => {
       return newEvent;
     } catch (error: any) {
       console.error('Error creating event:', error);
-      toast.error('Failed to create event: ' + error.message);
+      throw error;
+    }
+  };
+
+  const updateEvent = async (eventId: string, eventData: Partial<CreateEventData>) => {
+    if (!user) {
+      toast.error('You must be logged in to update events');
+      return;
+    }
+
+    try {
+      const updatedEvent = await updateEventInDatabase(eventId, eventData);
+      console.log('Event updated successfully:', updatedEvent);
+      toast.success('Event updated successfully!');
+      
+      // Update local state
+      setEvents(prevEvents => 
+        prevEvents.map(event => 
+          event.id === eventId ? updatedEvent : event
+        )
+      );
+      
+      return updatedEvent;
+    } catch (error: any) {
+      console.error('Error updating event:', error);
       throw error;
     }
   };
@@ -74,12 +85,13 @@ export const useEvents = () => {
 
   useEffect(() => {
     fetchEvents();
-  }, []);
+  }, [user]);
 
   return {
     events,
     loading,
     createEvent,
+    updateEvent,
     verifyTicketPassword,
     refetchEvents: fetchEvents
   };

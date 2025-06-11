@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Event } from "@/types/event";
 import { sanitizeInput } from "@/utils/security";
+import { createOrderInDatabase, verifyTicketPasswordInDatabase } from "@/services/eventService";
+import { toast } from "sonner";
 import PasswordProtectedTicket from "./PasswordProtectedTicket";
 
 interface PublicEventPageProps {
@@ -16,6 +18,7 @@ interface PublicEventPageProps {
 const PublicEventPage = ({ event }: PublicEventPageProps) => {
   const [selectedTickets, setSelectedTickets] = useState<{ [key: string]: number }>({});
   const [unlockedTickets, setUnlockedTickets] = useState<{ [key: string]: boolean }>({});
+  const [purchasing, setPurchasing] = useState(false);
 
   const totalTickets = event.ticket_types?.reduce((sum, ticket) => sum + ticket.quantity, 0) || 0;
   const soldTickets = event.ticket_types?.reduce((sum, ticket) => sum + ticket.sold, 0) || 0;
@@ -46,11 +49,25 @@ const PublicEventPage = ({ event }: PublicEventPageProps) => {
     }));
   };
 
-  const handleTicketUnlock = (ticketId: string) => {
-    setUnlockedTickets(prev => ({
-      ...prev,
-      [ticketId]: true
-    }));
+  const handleTicketUnlock = async (ticketId: string, password: string) => {
+    try {
+      const isValid = await verifyTicketPasswordInDatabase(ticketId, password);
+      if (isValid) {
+        setUnlockedTickets(prev => ({
+          ...prev,
+          [ticketId]: true
+        }));
+        toast.success('Ticket unlocked successfully!');
+        return true;
+      } else {
+        toast.error('Invalid password');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error verifying password:', error);
+      toast.error('Error verifying password');
+      return false;
+    }
   };
 
   const getTotalCost = () => {
@@ -64,15 +81,46 @@ const PublicEventPage = ({ event }: PublicEventPageProps) => {
     return Object.values(selectedTickets).reduce((sum, quantity) => sum + quantity, 0);
   };
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     const totalSelected = getTotalSelectedTickets();
     if (totalSelected === 0) {
+      toast.error('Please select at least one ticket');
       return;
     }
-    
-    // This would integrate with a payment processor
-    console.log('Purchase tickets:', selectedTickets);
-    alert(`Purchase flow would start here for ${totalSelected} tickets totaling $${getTotalCost().toFixed(2)}`);
+
+    setPurchasing(true);
+
+    try {
+      const orderItems = Object.entries(selectedTickets)
+        .filter(([_, quantity]) => quantity > 0)
+        .map(([ticketId, quantity]) => {
+          const ticket = event.ticket_types?.find(t => t.id === ticketId);
+          return {
+            ticketTypeId: ticketId,
+            quantity,
+            pricePerTicket: ticket?.price || 0
+          };
+        });
+
+      const orderId = await createOrderInDatabase({
+        eventId: event.id,
+        totalAmount: getTotalCost(),
+        items: orderItems
+      });
+
+      toast.success(`Purchase successful! Order ID: ${orderId.slice(0, 8)}...`);
+      
+      // Reset selections
+      setSelectedTickets({});
+      
+      // Refresh the page to show updated sold counts
+      window.location.reload();
+    } catch (error) {
+      console.error('Error processing purchase:', error);
+      toast.error('Failed to process purchase. Please try again.');
+    } finally {
+      setPurchasing(false);
+    }
   };
 
   // Sanitize display data
@@ -172,14 +220,14 @@ const PublicEventPage = ({ event }: PublicEventPageProps) => {
                     sold: ticket.sold,
                     description: ticket.description,
                     isPasswordProtected: ticket.is_password_protected,
-                    password: "secret123" // Mock password for demo
+                    password: ticket.password_hash || ""
                   };
 
                   return (
                     <PasswordProtectedTicket
                       key={ticket.id}
                       ticket={ticketForComponent}
-                      onUnlock={() => handleTicketUnlock(ticket.id)}
+                      onUnlock={(password) => handleTicketUnlock(ticket.id, password)}
                     >
                       <div className="border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
@@ -209,7 +257,7 @@ const PublicEventPage = ({ event }: PublicEventPageProps) => {
                           </div>
                         </div>
 
-                        {available > 0 ? (
+                        {available > 0 && isUnlocked ? (
                           <div className="flex items-center gap-3">
                             <Button
                               variant="outline"
@@ -238,11 +286,15 @@ const PublicEventPage = ({ event }: PublicEventPageProps) => {
                               </div>
                             )}
                           </div>
-                        ) : (
+                        ) : available === 0 ? (
                           <Badge variant="secondary" className="bg-red-100 text-red-700">
                             Sold Out
                           </Badge>
-                        )}
+                        ) : !isUnlocked ? (
+                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
+                            Password Required
+                          </Badge>
+                        ) : null}
                       </div>
                     </PasswordProtectedTicket>
                   );
@@ -261,11 +313,12 @@ const PublicEventPage = ({ event }: PublicEventPageProps) => {
                       </div>
                       <Button
                         onClick={handlePurchase}
+                        disabled={purchasing}
                         size="lg"
                         className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                       >
                         <Ticket className="h-4 w-4 mr-2" />
-                        Purchase Tickets
+                        {purchasing ? "Processing..." : "Purchase Tickets"}
                       </Button>
                     </div>
                   </div>
