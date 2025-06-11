@@ -1,25 +1,45 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { CreditCard, DollarSign, Settings, Check, AlertCircle } from "lucide-react";
+import { CreditCard, DollarSign, Settings, Check, AlertCircle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { usePaymentSettings } from "@/hooks/usePaymentSettings";
 
 const PaymentSettings = () => {
   const { toast } = useToast();
+  const { paymentSettings, loading, savePaymentSettings } = usePaymentSettings();
+  
   const [paypalEnabled, setPaypalEnabled] = useState(false);
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [paypalEmail, setPaypalEmail] = useState("");
   const [stripePublishableKey, setStripePublishableKey] = useState("");
   const [stripeSecretKey, setStripeSecretKey] = useState("");
+  const [saving, setSaving] = useState<string | null>(null);
 
-  const handleSavePayPal = () => {
-    if (!paypalEmail) {
+  // Load existing settings when data is fetched
+  useEffect(() => {
+    const paypalSettings = paymentSettings.find(p => p.provider === 'paypal');
+    const stripeSettings = paymentSettings.find(p => p.provider === 'stripe');
+
+    if (paypalSettings) {
+      setPaypalEnabled(paypalSettings.is_enabled);
+      setPaypalEmail(paypalSettings.settings.email || "");
+    }
+
+    if (stripeSettings) {
+      setStripeEnabled(stripeSettings.is_enabled);
+      setStripePublishableKey(stripeSettings.settings.publishable_key || "");
+      setStripeSecretKey(stripeSettings.settings.secret_key || "");
+    }
+  }, [paymentSettings]);
+
+  const handleSavePayPal = async () => {
+    if (!paypalEmail && paypalEnabled) {
       toast({
         title: "Error",
         description: "Please enter your PayPal email address",
@@ -27,16 +47,33 @@ const PaymentSettings = () => {
       });
       return;
     }
+
+    setSaving('paypal');
     
-    // Here you would save to your backend/database
-    toast({
-      title: "PayPal Settings Saved",
-      description: "Your PayPal configuration has been updated successfully",
+    const { error } = await savePaymentSettings({
+      provider: 'paypal',
+      is_enabled: paypalEnabled,
+      settings: { email: paypalEmail }
     });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save PayPal settings",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "PayPal Settings Saved",
+        description: "Your PayPal configuration has been updated successfully",
+      });
+    }
+
+    setSaving(null);
   };
 
-  const handleSaveStripe = () => {
-    if (!stripePublishableKey || !stripeSecretKey) {
+  const handleSaveStripe = async () => {
+    if ((!stripePublishableKey || !stripeSecretKey) && stripeEnabled) {
       toast({
         title: "Error",
         description: "Please enter both Stripe keys",
@@ -44,13 +81,48 @@ const PaymentSettings = () => {
       });
       return;
     }
-    
-    // Here you would save to your backend/database
-    toast({
-      title: "Stripe Settings Saved",
-      description: "Your Stripe configuration has been updated successfully",
+
+    setSaving('stripe');
+
+    const { error } = await savePaymentSettings({
+      provider: 'stripe',
+      is_enabled: stripeEnabled,
+      settings: { 
+        publishable_key: stripePublishableKey,
+        secret_key: stripeSecretKey 
+      }
     });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save Stripe settings",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Stripe Settings Saved",
+        description: "Your Stripe configuration has been updated successfully",
+      });
+    }
+
+    setSaving(null);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-purple-600" />
+              <p className="mt-2 text-gray-600">Loading payment settings...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 py-8">
@@ -103,10 +175,14 @@ const PaymentSettings = () => {
               
               <Button 
                 onClick={handleSavePayPal}
-                disabled={!paypalEnabled}
+                disabled={!paypalEnabled || saving === 'paypal'}
                 className="w-full sm:w-auto"
               >
-                <Check className="h-4 w-4 mr-2" />
+                {saving === 'paypal' ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4 mr-2" />
+                )}
                 Save PayPal Settings
               </Button>
             </CardContent>
@@ -166,10 +242,14 @@ const PaymentSettings = () => {
               
               <Button 
                 onClick={handleSaveStripe}
-                disabled={!stripeEnabled}
+                disabled={!stripeEnabled || saving === 'stripe'}
                 className="w-full sm:w-auto"
               >
-                <Check className="h-4 w-4 mr-2" />
+                {saving === 'stripe' ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4 mr-2" />
+                )}
                 Save Stripe Settings
               </Button>
             </CardContent>
