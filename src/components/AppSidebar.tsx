@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Calendar, DollarSign, Users, Settings, Mail, TrendingUp, Home, Plus } from "lucide-react";
+import { Calendar, DollarSign, Users, Settings, Mail, TrendingUp, Home } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,6 @@ import {
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "All Events", url: "/events", icon: Calendar },
-  { title: "Create Event", url: "/event/new", icon: Plus },
   { title: "Payment Settings", url: "/payment-settings", icon: DollarSign },
   { title: "Ticket Tracking", url: "/ticket-tracking", icon: TrendingUp },
   { title: "Newsletter", url: "/newsletter", icon: Mail },

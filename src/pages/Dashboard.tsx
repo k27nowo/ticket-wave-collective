@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Calendar, DollarSign, Users, TrendingUp } from "lucide-react";
 import { Event } from "@/types/event";
 import { formatDistanceToNow } from "date-fns";
+import SecureCreateEventModal from "@/components/SecureCreateEventModal";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ const Dashboard = () => {
     activeEvents: 0
   });
   const [loading, setLoading] = useState(true);
+  const [createEventModalOpen, setCreateEventModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -37,7 +39,7 @@ const Dashboard = () => {
           .select(`
             *,
             ticket_types (
-              id, name, price, quantity, sold
+              id, event_id, name, price, quantity, sold, description, is_password_protected, created_at
             )
           `)
           .eq('user_id', user.id)
@@ -95,7 +97,12 @@ const Dashboard = () => {
   }, [user, navigate]);
 
   const handleCreateEvent = () => {
-    navigate('/event/new');
+    setCreateEventModalOpen(true);
+  };
+
+  const handleEventCreated = () => {
+    // Refresh dashboard data
+    window.location.reload();
   };
 
   if (loading) {
@@ -234,6 +241,12 @@ const Dashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Create Event Modal */}
+      <SecureCreateEventModal 
+        open={createEventModalOpen}
+        onOpenChange={setCreateEventModalOpen}
+      />
     </div>
   );
 };

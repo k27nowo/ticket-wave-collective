@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +17,7 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
+import AllEventsPage from "./pages/AllEventsPage";
 
 const queryClient = new QueryClient();
 
@@ -37,22 +39,7 @@ const App = () => (
             <Route path="/events" element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <div className="space-y-6">
-                    <h1 className="text-3xl font-bold text-gray-900">All Events</h1>
-                    {/* This will show the events list - can be enhanced later */}
-                    <p className="text-gray-600">Events list will be displayed here.</p>
-                  </div>
-                </DashboardLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/event/new" element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <div className="space-y-6">
-                    <h1 className="text-3xl font-bold text-gray-900">Create New Event</h1>
-                    {/* Event creation form will be here */}
-                    <p className="text-gray-600">Event creation form will be displayed here.</p>
-                  </div>
+                  <AllEventsPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
