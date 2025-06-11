@@ -259,20 +259,18 @@ export const createOrderInDatabase = async (orderData: {
 
     if (itemsError) throw itemsError;
 
-    // Update sold count for each ticket type
+    // Update sold count for each ticket type using direct SQL update
     for (const item of orderData.items) {
-      const { error: updateError } = await supabase.rpc('increment_ticket_sold', {
-        ticket_type_id: item.ticketTypeId,
-        quantity: item.quantity
-      });
+      const { error: updateError } = await supabase
+        .from('ticket_types')
+        .update({ 
+          sold: await getCurrentSoldCount(item.ticketTypeId) + item.quantity 
+        })
+        .eq('id', item.ticketTypeId);
 
       if (updateError) {
         console.error('Error updating sold count:', updateError);
-        // Create a simpler update as fallback
-        await supabase
-          .from('ticket_types')
-          .update({ sold: supabase.sql`sold + ${item.quantity}` })
-          .eq('id', item.ticketTypeId);
+        throw updateError;
       }
     }
 
@@ -282,4 +280,20 @@ export const createOrderInDatabase = async (orderData: {
     toast.error('Failed to process order: ' + error.message);
     throw error;
   }
+};
+
+// Helper function to get current sold count
+const getCurrentSoldCount = async (ticketTypeId: string): Promise<number> => {
+  const { data, error } = await supabase
+    .from('ticket_types')
+    .select('sold')
+    .eq('id', ticketTypeId)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching current sold count:', error);
+    return 0;
+  }
+  
+  return data.sold || 0;
 };
