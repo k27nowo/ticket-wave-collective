@@ -18,7 +18,7 @@ interface TicketType {
 
 interface PasswordProtectedTicketProps {
   ticket: TicketType;
-  onUnlock: () => void;
+  onUnlock: (password: string) => Promise<boolean>;
   children: React.ReactNode;
 }
 
@@ -27,15 +27,24 @@ const PasswordProtectedTicket = ({ ticket, onUnlock, children }: PasswordProtect
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isUnlocked, setIsUnlocked] = useState(!ticket.isPasswordProtected);
+  const [isUnlocking, setIsUnlocking] = useState(false);
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (enteredPassword === ticket.password) {
-      setIsUnlocked(true);
-      setError("");
-      onUnlock();
-    } else {
-      setError("Incorrect password. Please try again.");
+    setIsUnlocking(true);
+    setError("");
+    
+    try {
+      const success = await onUnlock(enteredPassword);
+      if (success) {
+        setIsUnlocked(true);
+      } else {
+        setError("Incorrect password. Please try again.");
+      }
+    } catch (error) {
+      setError("Error verifying password. Please try again.");
+    } finally {
+      setIsUnlocking(false);
     }
   };
 
@@ -76,6 +85,7 @@ const PasswordProtectedTicket = ({ ticket, onUnlock, children }: PasswordProtect
                   setError("");
                 }}
                 className={error ? "border-red-300 focus:border-red-500" : ""}
+                disabled={isUnlocking}
               />
               <Button
                 type="button"
@@ -83,6 +93,7 @@ const PasswordProtectedTicket = ({ ticket, onUnlock, children }: PasswordProtect
                 size="sm"
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isUnlocking}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
@@ -98,10 +109,10 @@ const PasswordProtectedTicket = ({ ticket, onUnlock, children }: PasswordProtect
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              disabled={!enteredPassword}
+              disabled={!enteredPassword || isUnlocking}
             >
               <Lock className="h-4 w-4 mr-2" />
-              Unlock Ticket
+              {isUnlocking ? "Verifying..." : "Unlock Ticket"}
             </Button>
           </form>
           
