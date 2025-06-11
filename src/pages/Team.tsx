@@ -15,9 +15,13 @@ const Team = () => {
     inviteMember,
     removeMember,
     updateMemberRole,
+    removeInvitation,
+    resendInvitation,
     isInviting,
     isRemoving,
     isUpdating,
+    isRemovingInvitation,
+    isResendingInvitation,
   } = useTeam();
 
   const handleInvite = (email: string, role: string) => {
@@ -26,6 +30,14 @@ const Team = () => {
 
   const handleRemoveMember = (memberId: string) => {
     removeMember(memberId);
+  };
+
+  const handleRemoveInvitation = (invitationId: string) => {
+    removeInvitation(invitationId);
+  };
+
+  const handleResendInvitation = (invitation: any) => {
+    resendInvitation(invitation);
   };
 
   if (isLoading) {
@@ -44,7 +56,13 @@ const Team = () => {
           pendingInvitations={pendingInvitations}
         />
 
-        <PendingInvitations pendingInvitations={pendingInvitations} />
+        <PendingInvitations 
+          pendingInvitations={pendingInvitations}
+          onRemoveInvitation={handleRemoveInvitation}
+          onResendInvitation={handleResendInvitation}
+          isRemovingInvitation={isRemovingInvitation}
+          isResendingInvitation={isResendingInvitation}
+        />
 
         <TeamMembersTable
           teamMembers={teamMembers}

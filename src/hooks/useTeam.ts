@@ -123,6 +123,79 @@ export const useTeam = () => {
     },
   });
 
+  // Remove pending invitation mutation
+  const removeInvitationMutation = useMutation({
+    mutationFn: async (invitationId: string) => {
+      const { error } = await supabase
+        .from('team_invitations')
+        .delete()
+        .eq('id', invitationId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-invitations'] });
+      toast({
+        title: "Invitation Removed",
+        description: "Pending invitation has been removed successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Remove Invitation",
+        description: error.message || "An error occurred while removing the invitation.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Resend invitation mutation
+  const resendInvitationMutation = useMutation({
+    mutationFn: async (invitation: TeamInvitation) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // Get user profile for the team owner name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      const teamOwnerName = profile?.full_name || 'Team Owner';
+      const appUrl = window.location.origin;
+
+      // Send the invitation email
+      const { error: emailError } = await supabase.functions.invoke('send-team-invitation', {
+        body: {
+          email: invitation.email,
+          role: invitation.role,
+          teamOwnerName,
+          invitationToken: invitation.token,
+          appUrl,
+        },
+      });
+
+      if (emailError) {
+        throw new Error('Failed to send invitation email');
+      }
+
+      return invitation;
+    },
+    onSuccess: (invitation) => {
+      toast({
+        title: "Invitation Resent",
+        description: `Invitation resent to ${invitation.email}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Resend Invitation",
+        description: error.message || "An error occurred while resending the invitation.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Remove team member mutation
   const removeMemberMutation = useMutation({
     mutationFn: async (memberId: string) => {
@@ -182,8 +255,12 @@ export const useTeam = () => {
     inviteMember: inviteMemberMutation.mutate,
     removeMember: removeMemberMutation.mutate,
     updateMemberRole: updateMemberRoleMutation.mutate,
+    removeInvitation: removeInvitationMutation.mutate,
+    resendInvitation: resendInvitationMutation.mutate,
     isInviting: inviteMemberMutation.isPending,
     isRemoving: removeMemberMutation.isPending,
     isUpdating: updateMemberRoleMutation.isPending,
+    isRemovingInvitation: removeInvitationMutation.isPending,
+    isResendingInvitation: resendInvitationMutation.isPending,
   };
 };
