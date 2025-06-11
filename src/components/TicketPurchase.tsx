@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,8 +47,14 @@ const TicketPurchase = ({ event }: TicketPurchaseProps) => {
     }
   };
 
-  const handleTicketUnlock = (ticketName: string) => {
-    setUnlockedTickets({ ...unlockedTickets, [ticketName]: true });
+  const handleTicketUnlock = async (ticketName: string, password: string): Promise<boolean> => {
+    // Simple password validation - in a real app, this would be validated server-side
+    const ticket = event.ticketTypes.find(t => t.name === ticketName);
+    if (ticket && ticket.password === password) {
+      setUnlockedTickets({ ...unlockedTickets, [ticketName]: true });
+      return true;
+    }
+    return false;
   };
 
   const getTotalPrice = () => {
@@ -144,7 +149,7 @@ const TicketPurchase = ({ event }: TicketPurchaseProps) => {
                 <PasswordProtectedTicket
                   key={ticket.name}
                   ticket={ticket}
-                  onUnlock={() => handleTicketUnlock(ticket.name)}
+                  onUnlock={(password) => handleTicketUnlock(ticket.name, password)}
                 >
                   <Card className="bg-white/90 backdrop-blur-sm">
                     <CardContent className="p-6">
