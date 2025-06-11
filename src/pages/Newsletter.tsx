@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Send, Users, Calendar, Eye, CheckCircle, Clock, Save, Edit3, Plus, Trash2 } from "lucide-react";
+import { Mail, Send, Users, Calendar, Eye, CheckCircle, Clock, Save, Edit3, Plus, Trash2, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -32,10 +31,10 @@ const mockEvents = [
 ];
 
 const mockCustomers = [
-  { id: 1, email: "john@example.com", name: "John Doe", lastPurchase: "Summer Music Festival 2024" },
-  { id: 2, email: "jane@example.com", name: "Jane Smith", lastPurchase: "Tech Conference 2024" },
-  { id: 3, email: "mike@example.com", name: "Mike Johnson", lastPurchase: "Summer Music Festival 2024" },
-  { id: 4, email: "sarah@example.com", name: "Sarah Wilson", lastPurchase: "Tech Conference 2024" },
+  { id: 1, email: "john@example.com", name: "John Doe", lastPurchase: "Summer Music Festival 2024", eventsAttended: 3, totalTickets: 5 },
+  { id: 2, email: "jane@example.com", name: "Jane Smith", lastPurchase: "Tech Conference 2024", eventsAttended: 2, totalTickets: 3 },
+  { id: 3, email: "mike@example.com", name: "Mike Johnson", lastPurchase: "Summer Music Festival 2024", eventsAttended: 4, totalTickets: 7 },
+  { id: 4, email: "sarah@example.com", name: "Sarah Wilson", lastPurchase: "Tech Conference 2024", eventsAttended: 1, totalTickets: 2 },
 ];
 
 interface NewsletterTemplate {
@@ -57,6 +56,7 @@ const Newsletter = () => {
   const [sentEmails, setSentEmails] = useState<number[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(newsletterTitle);
+  const [selectedCustomerDetails, setSelectedCustomerDetails] = useState<number | null>(null);
   
   // Template management state
   const [templates, setTemplates] = useState<NewsletterTemplate[]>([
@@ -541,15 +541,17 @@ The TicketHub Team`}
                     return (
                       <div
                         key={customer.id}
-                        onClick={() => handleCustomerToggle(customer.id)}
-                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        className={`p-3 rounded-lg border transition-colors ${
                           isSelected 
                             ? "border-purple-200 bg-purple-50" 
                             : "border-gray-200 hover:border-gray-300"
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex-1">
+                          <div 
+                            className="flex-1 cursor-pointer"
+                            onClick={() => handleCustomerToggle(customer.id)}
+                          >
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-sm">{customer.name}</p>
                               {wasSent && (
@@ -559,12 +561,56 @@ The TicketHub Team`}
                             <p className="text-xs text-gray-600">{customer.email}</p>
                             <p className="text-xs text-gray-500">Last: {customer.lastPurchase}</p>
                           </div>
-                          <div className={`w-4 h-4 border-2 rounded ${
-                            isSelected ? "bg-purple-600 border-purple-600" : "border-gray-300"
-                          }`}>
-                            {isSelected && (
-                              <CheckCircle className="h-3 w-3 text-white" />
-                            )}
+                          <div className="flex items-center gap-2">
+                            <Dialog open={selectedCustomerDetails === customer.id} onOpenChange={(open) => setSelectedCustomerDetails(open ? customer.id : null)}>
+                              <DialogTrigger asChild>
+                                <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                                  <Info className="h-3 w-3" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Customer Details</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <h4 className="font-medium">{customer.name}</h4>
+                                    <p className="text-sm text-gray-600">{customer.email}</p>
+                                  </div>
+                                  <Separator />
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <p className="text-sm font-medium">Events Attended</p>
+                                      <p className="text-2xl font-bold text-blue-600">{customer.eventsAttended}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium">Total Tickets</p>
+                                      <p className="text-2xl font-bold text-purple-600">{customer.totalTickets}</p>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">Last Purchase</p>
+                                    <p className="text-sm text-gray-600">{customer.lastPurchase}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">Attendance Rate</p>
+                                    <Badge variant="secondary">
+                                      {((customer.eventsAttended / customer.totalTickets) * 100).toFixed(1)}%
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            <div 
+                              className={`w-4 h-4 border-2 rounded cursor-pointer ${
+                                isSelected ? "bg-purple-600 border-purple-600" : "border-gray-300"
+                              }`}
+                              onClick={() => handleCustomerToggle(customer.id)}
+                            >
+                              {isSelected && (
+                                <CheckCircle className="h-3 w-3 text-white" />
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
