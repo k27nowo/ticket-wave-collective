@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Minus, Calendar, MapPin, Clock, Lock } from "lucide-react";
+import { Plus, Minus, Calendar, MapPin, Clock, Lock, Upload, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -35,6 +34,9 @@ const CreateEventModal = ({ open, onOpenChange, onEventCreated }: CreateEventMod
     image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&h=300&fit=crop"
   });
 
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string>("");
+
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>([
     { name: "Early Bird", price: 50, quantity: 100, description: "Limited time offer" },
     { name: "Regular", price: 75, quantity: 200, description: "Standard admission" }
@@ -48,6 +50,28 @@ const CreateEventModal = ({ open, onOpenChange, onEventCreated }: CreateEventMod
     isPasswordProtected: false,
     password: ""
   });
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBannerFile(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setBannerPreview(result);
+        setEventData({...eventData, image: result});
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeBanner = () => {
+    setBannerFile(null);
+    setBannerPreview("");
+    setEventData({...eventData, image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&h=300&fit=crop"});
+  };
 
   const addTicketType = () => {
     if (newTicket.name && newTicket.price > 0 && newTicket.quantity > 0) {
@@ -90,6 +114,8 @@ const CreateEventModal = ({ open, onOpenChange, onEventCreated }: CreateEventMod
         location: "",
         image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&h=300&fit=crop"
       });
+      setBannerFile(null);
+      setBannerPreview("");
       setTicketTypes([
         { name: "Early Bird", price: 50, quantity: 100, description: "Limited time offer" },
         { name: "Regular", price: 75, quantity: 200, description: "Standard admission" }
@@ -128,13 +154,50 @@ const CreateEventModal = ({ open, onOpenChange, onEventCreated }: CreateEventMod
                   />
                 </div>
                 <div>
-                  <Label htmlFor="image">Event Image URL</Label>
-                  <Input
-                    id="image"
-                    value={eventData.image}
-                    onChange={(e) => setEventData({...eventData, image: e.target.value})}
-                    placeholder="https://..."
-                  />
+                  <Label htmlFor="banner">Upload Event Banner</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="banner"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('banner')?.click()}
+                        className="flex items-center gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Choose Image
+                      </Button>
+                      {bannerFile && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={removeBanner}
+                          className="text-red-600 hover:bg-red-50"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {bannerPreview && (
+                      <div className="relative w-full h-32 rounded-lg overflow-hidden border">
+                        <img 
+                          src={bannerPreview} 
+                          alt="Banner preview" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    {bannerFile && (
+                      <p className="text-sm text-gray-600">{bannerFile.name}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
