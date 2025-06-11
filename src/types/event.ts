@@ -9,6 +9,7 @@ export interface Event {
   user_id: string;
   created_at: string;
   updated_at: string;
+  overall_ticket_limit?: number;
   ticket_types?: TicketType[];
 }
 
@@ -32,6 +33,7 @@ export interface CreateEventData {
   time: string;
   location: string;
   image_url?: string;
+  overall_ticket_limit?: number;
   ticketTypes: {
     name: string;
     price: number;

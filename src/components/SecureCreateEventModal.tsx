@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Minus, Calendar, MapPin, Clock, Lock, Upload, X, Shield, AlertTriangle } from "lucide-react";
+import { Plus, Minus, Calendar, MapPin, Clock, Lock, Upload, X, Shield, AlertTriangle, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -37,7 +37,8 @@ const SecureCreateEventModal = ({ open, onOpenChange }: SecureCreateEventModalPr
     date: "",
     time: "",
     location: "",
-    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&h=300&fit=crop"
+    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&h=300&fit=crop",
+    overall_ticket_limit: ""
   });
 
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -82,6 +83,12 @@ const SecureCreateEventModal = ({ open, onOpenChange }: SecureCreateEventModalPr
       errors.push("Location is required");
     }
 
+    // Validate overall ticket limit
+    const overallLimit = parseInt(eventData.overall_ticket_limit);
+    if (eventData.overall_ticket_limit && (isNaN(overallLimit) || overallLimit < 1)) {
+      errors.push("Overall ticket limit must be a positive number");
+    }
+
     // Validate ticket types
     if (ticketTypes.length === 0) {
       errors.push("At least one ticket type is required");
@@ -96,6 +103,14 @@ const SecureCreateEventModal = ({ open, onOpenChange }: SecureCreateEventModalPr
       }
       if (ticket.isPasswordProtected && (!ticket.password || ticket.password.length < 4)) {
         errors.push(`Password for "${ticket.name}" must be at least 4 characters`);
+      }
+    }
+
+    // Check if total ticket quantity exceeds overall limit
+    if (eventData.overall_ticket_limit) {
+      const totalTicketQuantity = ticketTypes.reduce((sum, ticket) => sum + ticket.quantity, 0);
+      if (totalTicketQuantity > overallLimit) {
+        errors.push(`Total ticket quantity (${totalTicketQuantity}) exceeds overall limit (${overallLimit})`);
       }
     }
 
@@ -208,6 +223,7 @@ const SecureCreateEventModal = ({ open, onOpenChange }: SecureCreateEventModalPr
         time: eventData.time,
         location: sanitizeInput.text(eventData.location),
         image_url: eventData.image,
+        overall_ticket_limit: eventData.overall_ticket_limit ? parseInt(eventData.overall_ticket_limit) : undefined,
         ticketTypes: ticketTypes.map(ticket => ({
           name: sanitizeInput.text(ticket.name),
           price: ticket.price,
@@ -227,7 +243,8 @@ const SecureCreateEventModal = ({ open, onOpenChange }: SecureCreateEventModalPr
         date: "",
         time: "",
         location: "",
-        image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&h=300&fit=crop"
+        image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&h=300&fit=crop",
+        overall_ticket_limit: ""
       });
       setBannerFile(null);
       setBannerPreview("");
@@ -244,6 +261,10 @@ const SecureCreateEventModal = ({ open, onOpenChange }: SecureCreateEventModalPr
       setSubmitting(false);
     }
   };
+
+  // Calculate total ticket quantity for display
+  const totalTicketQuantity = ticketTypes.reduce((sum, ticket) => sum + ticket.quantity, 0);
+  const overallLimit = parseInt(eventData.overall_ticket_limit);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -347,7 +368,7 @@ const SecureCreateEventModal = ({ open, onOpenChange }: SecureCreateEventModalPr
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="date" className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
@@ -389,6 +410,25 @@ const SecureCreateEventModal = ({ open, onOpenChange }: SecureCreateEventModalPr
                     required
                   />
                 </div>
+                <div>
+                  <Label htmlFor="overall_ticket_limit" className="flex items-center">
+                    <Users className="h-4 w-4 mr-1" />
+                    Overall Ticket Limit
+                  </Label>
+                  <Input
+                    id="overall_ticket_limit"
+                    type="number"
+                    min="1"
+                    value={eventData.overall_ticket_limit}
+                    onChange={(e) => setEventData({...eventData, overall_ticket_limit: e.target.value})}
+                    placeholder="e.g., 70"
+                  />
+                  {eventData.overall_ticket_limit && !isNaN(overallLimit) && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Total capacity: {overallLimit} tickets
+                    </p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -396,9 +436,18 @@ const SecureCreateEventModal = ({ open, onOpenChange }: SecureCreateEventModalPr
           {/* Ticket Types */}
           <Card className="border-blue-200">
             <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <Plus className="h-5 w-5 mr-2 text-blue-600" />
-                Ticket Types
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center">
+                  <Plus className="h-5 w-5 mr-2 text-blue-600" />
+                  Ticket Types
+                </div>
+                {eventData.overall_ticket_limit && (
+                  <div className="text-sm">
+                    <span className={`${totalTicketQuantity > overallLimit ? 'text-red-600' : 'text-green-600'}`}>
+                      {totalTicketQuantity} / {overallLimit} tickets configured
+                    </span>
+                  </div>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -547,3 +596,5 @@ const SecureCreateEventModal = ({ open, onOpenChange }: SecureCreateEventModalPr
 };
 
 export default SecureCreateEventModal;
+
+```

@@ -1,4 +1,3 @@
-
 import { Event, CreateEventData } from '@/types/event';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -15,6 +14,7 @@ export const getMockEvents = (): Event[] => {
       user_id: '',
       created_at: '2024-06-01T10:00:00Z',
       updated_at: '2024-06-01T10:00:00Z',
+      overall_ticket_limit: 300,
       ticket_types: [
         {
           id: '1',
@@ -88,6 +88,7 @@ export const createEventInDatabase = async (eventData: CreateEventData, userId: 
         date: `${eventData.date}T${eventData.time}`,
         location: eventData.location.trim(),
         image_url: eventData.image_url || '',
+        overall_ticket_limit: eventData.overall_ticket_limit,
         user_id: userId
       })
       .select()
@@ -135,6 +136,7 @@ export const updateEventInDatabase = async (eventId: string, eventData: Partial<
     if (eventData.date && eventData.time) updateData.date = `${eventData.date}T${eventData.time}`;
     if (eventData.location) updateData.location = eventData.location.trim();
     if (eventData.image_url !== undefined) updateData.image_url = eventData.image_url;
+    if (eventData.overall_ticket_limit !== undefined) updateData.overall_ticket_limit = eventData.overall_ticket_limit;
     updateData.updated_at = new Date().toISOString();
 
     const { data: eventResult, error: eventError } = await supabase
@@ -230,6 +232,32 @@ export const createOrderInDatabase = async (orderData: {
 }): Promise<string> => {
   try {
     console.log('Creating order in database:', orderData);
+
+    // Check overall ticket limit before creating order
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('overall_ticket_limit')
+      .eq('id', orderData.eventId)
+      .single();
+
+    if (eventError) throw eventError;
+
+    if (event.overall_ticket_limit) {
+      // Calculate total tickets already sold for this event
+      const { data: ticketTypes, error: ticketTypesError } = await supabase
+        .from('ticket_types')
+        .select('sold')
+        .eq('event_id', orderData.eventId);
+
+      if (ticketTypesError) throw ticketTypesError;
+
+      const totalSold = ticketTypes.reduce((sum, ticket) => sum + ticket.sold, 0);
+      const totalOrderQuantity = orderData.items.reduce((sum, item) => sum + item.quantity, 0);
+
+      if (totalSold + totalOrderQuantity > event.overall_ticket_limit) {
+        throw new Error(`Order exceeds overall ticket limit. Only ${event.overall_ticket_limit - totalSold} tickets remaining.`);
+      }
+    }
 
     // Create the order
     const { data: order, error: orderError } = await supabase
