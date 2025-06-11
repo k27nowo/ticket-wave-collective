@@ -10,6 +10,7 @@ import PaymentSettings from "./pages/PaymentSettings";
 import TicketTracking from "./pages/TicketTracking";
 import Newsletter from "./pages/Newsletter";
 import Team from "./pages/Team";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/ticket-tracking" element={<TicketTracking />} />
           <Route path="/newsletter" element={<Newsletter />} />
           <Route path="/team" element={<Team />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -103,6 +103,13 @@ const Index = () => {
                   <span>Payment Settings</span>
                 </Button>
               </Link>
+
+              <Link to="/settings">
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Settings className="h-4 w-4" />
+                  <span>Settings</span>
+                </Button>
+              </Link>
               
               <Button 
                 onClick={() => setIsCreateModalOpen(true)}
