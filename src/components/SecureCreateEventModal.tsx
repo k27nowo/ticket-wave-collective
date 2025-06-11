@@ -596,5 +596,3 @@ const SecureCreateEventModal = ({ open, onOpenChange }: SecureCreateEventModalPr
 };
 
 export default SecureCreateEventModal;
-
-```
