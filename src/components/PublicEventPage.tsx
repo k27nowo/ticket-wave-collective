@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Event } from "@/types/event";
 import { sanitizeInput } from "@/utils/security";
+import PasswordProtectedTicket from "./PasswordProtectedTicket";
 
 interface PublicEventPageProps {
   event: Event;
@@ -14,6 +15,7 @@ interface PublicEventPageProps {
 
 const PublicEventPage = ({ event }: PublicEventPageProps) => {
   const [selectedTickets, setSelectedTickets] = useState<{ [key: string]: number }>({});
+  const [unlockedTickets, setUnlockedTickets] = useState<{ [key: string]: boolean }>({});
 
   const totalTickets = event.ticket_types?.reduce((sum, ticket) => sum + ticket.quantity, 0) || 0;
   const soldTickets = event.ticket_types?.reduce((sum, ticket) => sum + ticket.sold, 0) || 0;
@@ -41,6 +43,13 @@ const PublicEventPage = ({ event }: PublicEventPageProps) => {
     setSelectedTickets(prev => ({
       ...prev,
       [ticketId]: Math.max(0, quantity)
+    }));
+  };
+
+  const handleTicketUnlock = (ticketId: string) => {
+    setUnlockedTickets(prev => ({
+      ...prev,
+      [ticketId]: true
     }));
   };
 
@@ -153,71 +162,89 @@ const PublicEventPage = ({ event }: PublicEventPageProps) => {
                 {event.ticket_types.map((ticket) => {
                   const available = ticket.quantity - ticket.sold;
                   const selectedQuantity = selectedTickets[ticket.id] || 0;
+                  const isUnlocked = !ticket.is_password_protected || unlockedTickets[ticket.id];
                   
-                  return (
-                    <div key={ticket.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <h3 className="font-semibold text-lg flex items-center gap-2">
-                            {sanitizeInput.text(ticket.name)}
-                            {ticket.is_password_protected && (
-                              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                                <Shield className="h-3 w-3 mr-1" />
-                                Protected
-                              </Badge>
-                            )}
-                          </h3>
-                          {ticket.description && (
-                            <p className="text-gray-600 text-sm mt-1">
-                              {sanitizeInput.text(ticket.description)}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-purple-600">
-                            ${ticket.price.toFixed(2)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {available} available
-                          </div>
-                        </div>
-                      </div>
+                  // Convert ticket to the format expected by PasswordProtectedTicket
+                  const ticketForComponent = {
+                    name: ticket.name,
+                    price: ticket.price,
+                    quantity: ticket.quantity,
+                    sold: ticket.sold,
+                    description: ticket.description,
+                    isPasswordProtected: ticket.is_password_protected,
+                    password: "secret123" // Mock password for demo
+                  };
 
-                      {available > 0 ? (
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleTicketQuantityChange(ticket.id, selectedQuantity - 1)}
-                            disabled={selectedQuantity <= 0}
-                          >
-                            -
-                          </Button>
-                          <span className="min-w-[2rem] text-center font-medium">
-                            {selectedQuantity}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleTicketQuantityChange(ticket.id, selectedQuantity + 1)}
-                            disabled={selectedQuantity >= available}
-                          >
-                            +
-                          </Button>
-                          {selectedQuantity > 0 && (
-                            <div className="ml-auto text-right">
-                              <div className="font-medium">
-                                ${(ticket.price * selectedQuantity).toFixed(2)}
-                              </div>
+                  return (
+                    <PasswordProtectedTicket
+                      key={ticket.id}
+                      ticket={ticketForComponent}
+                      onUnlock={() => handleTicketUnlock(ticket.id)}
+                    >
+                      <div className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <h3 className="font-semibold text-lg flex items-center gap-2">
+                              {sanitizeInput.text(ticket.name)}
+                              {ticket.is_password_protected && (
+                                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  Protected
+                                </Badge>
+                              )}
+                            </h3>
+                            {ticket.description && (
+                              <p className="text-gray-600 text-sm mt-1">
+                                {sanitizeInput.text(ticket.description)}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-purple-600">
+                              ${ticket.price.toFixed(2)}
                             </div>
-                          )}
+                            <div className="text-sm text-gray-500">
+                              {available} available
+                            </div>
+                          </div>
                         </div>
-                      ) : (
-                        <Badge variant="secondary" className="bg-red-100 text-red-700">
-                          Sold Out
-                        </Badge>
-                      )}
-                    </div>
+
+                        {available > 0 ? (
+                          <div className="flex items-center gap-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTicketQuantityChange(ticket.id, selectedQuantity - 1)}
+                              disabled={selectedQuantity <= 0}
+                            >
+                              -
+                            </Button>
+                            <span className="min-w-[2rem] text-center font-medium">
+                              {selectedQuantity}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTicketQuantityChange(ticket.id, selectedQuantity + 1)}
+                              disabled={selectedQuantity >= available}
+                            >
+                              +
+                            </Button>
+                            {selectedQuantity > 0 && (
+                              <div className="ml-auto text-right">
+                                <div className="font-medium">
+                                  ${(ticket.price * selectedQuantity).toFixed(2)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <Badge variant="secondary" className="bg-red-100 text-red-700">
+                            Sold Out
+                          </Badge>
+                        )}
+                      </div>
+                    </PasswordProtectedTicket>
                   );
                 })}
 
