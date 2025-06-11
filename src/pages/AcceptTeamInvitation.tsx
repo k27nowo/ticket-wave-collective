@@ -8,6 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
+interface AcceptInvitationResult {
+  success: boolean;
+  error?: string;
+  role?: string;
+}
+
 const AcceptTeamInvitation = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -70,15 +76,18 @@ const AcceptTeamInvitation = () => {
         return;
       }
 
-      if (!result.success) {
-        setError(result.error);
+      // Type cast the result to our expected interface
+      const typedResult = result as AcceptInvitationResult;
+
+      if (!typedResult.success) {
+        setError(typedResult.error || 'Unknown error occurred');
         return;
       }
 
       setAccepted(true);
       toast({
         title: "Invitation Accepted",
-        description: `You've successfully joined the team with role: ${result.role}`,
+        description: `You've successfully joined the team with role: ${typedResult.role}`,
       });
 
       // Redirect to team page after a delay
