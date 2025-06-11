@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import SecureIndex from "./pages/SecureIndex";
 import Auth from "./pages/Auth";
 import EventPage from "./pages/EventPage";
+import PublicEvent from "./pages/PublicEvent";
 import PaymentSettings from "./pages/PaymentSettings";
 import TicketTracking from "./pages/TicketTracking";
 import Newsletter from "./pages/Newsletter";
@@ -26,6 +28,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/public/event/:eventId" element={<PublicEvent />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <SecureIndex />

@@ -10,30 +10,45 @@ import SecureEventCard from "@/components/SecureEventCard";
 import SecureCreateEventModal from "@/components/SecureCreateEventModal";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEvents } from "@/hooks/useEvents";
+import { useEvents, Event } from "@/hooks/useEvents";
 import { sanitizeInput } from "@/utils/security";
 
 const SecureIndex = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [localEvents, setLocalEvents] = useState<Event[]>([]);
   const { user, signOut } = useAuth();
   const { events, loading } = useEvents();
+
+  // Combine database events with local updates
+  const allEvents = [...events, ...localEvents];
 
   const handleSignOut = async () => {
     await signOut();
   };
 
-  const filteredEvents = events.filter(event =>
+  const handleEventUpdated = (updatedEvent: Event) => {
+    // Update local state to reflect changes immediately
+    setLocalEvents(prev => {
+      const existing = prev.find(e => e.id === updatedEvent.id);
+      if (existing) {
+        return prev.map(e => e.id === updatedEvent.id ? updatedEvent : e);
+      }
+      return [...prev, updatedEvent];
+    });
+  };
+
+  const filteredEvents = allEvents.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     event.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calculate stats from database events
-  const totalTicketsSold = events.reduce((sum, event) => 
+  // Calculate stats from all events
+  const totalTicketsSold = allEvents.reduce((sum, event) => 
     sum + (event.ticket_types?.reduce((ticketSum, ticket) => ticketSum + ticket.sold, 0) || 0), 0
   );
 
-  const totalRevenue = events.reduce((sum, event) => 
+  const totalRevenue = allEvents.reduce((sum, event) => 
     sum + (event.ticket_types?.reduce((ticketSum, ticket) => ticketSum + (ticket.sold * ticket.price), 0) || 0), 0
   );
 
@@ -135,7 +150,7 @@ const SecureIndex = () => {
               <Calendar className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{events.length}</div>
+              <div className="text-2xl font-bold">{allEvents.length}</div>
               <p className="text-xs text-muted-foreground">Database-stored events</p>
             </CardContent>
           </Card>
@@ -217,7 +232,11 @@ const SecureIndex = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => (
-                <SecureEventCard key={event.id} event={event} />
+                <SecureEventCard 
+                  key={event.id} 
+                  event={event} 
+                  onEventUpdated={handleEventUpdated}
+                />
               ))}
             </div>
           )}
