@@ -77,7 +77,7 @@ const AcceptTeamInvitation = () => {
       }
 
       // Type cast the result to our expected interface
-      const typedResult = result as AcceptInvitationResult;
+      const typedResult = result as unknown as AcceptInvitationResult;
 
       if (!typedResult.success) {
         setError(typedResult.error || 'Unknown error occurred');
