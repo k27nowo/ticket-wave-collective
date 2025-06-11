@@ -284,54 +284,9 @@ The TicketHub Team`,
             {/* Template Selection */}
             <Card className="bg-white/90 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Save className="h-5 w-5" />
-                    Newsletter Templates
-                  </div>
-                  <Dialog open={isCreateTemplateOpen} onOpenChange={setIsCreateTemplateOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600">
-                        <Plus className="h-4 w-4 mr-1" />
-                        Save as Template
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Save Newsletter Template</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="template-name">Template Name</Label>
-                          <Input
-                            id="template-name"
-                            value={newTemplateName}
-                            onChange={(e) => setNewTemplateName(e.target.value)}
-                            placeholder="e.g., Early Access, Event Reminder"
-                          />
-                        </div>
-                        <div>
-                          <Label>Auto-apply to customers</Label>
-                          <div className="mt-2 space-y-2">
-                            <Badge 
-                              variant="secondary" 
-                              className="mr-2 cursor-pointer"
-                            >
-                              Previous customers
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="flex justify-end space-x-2">
-                          <Button variant="outline" onClick={() => setIsCreateTemplateOpen(false)}>
-                            Cancel
-                          </Button>
-                          <Button onClick={handleSaveAsTemplate}>
-                            Save Template
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                <CardTitle className="flex items-center gap-2">
+                  <Save className="h-5 w-5" />
+                  Newsletter Templates
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -400,9 +355,54 @@ The TicketHub Team`,
 
             <Card className="bg-white/90 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Send className="h-5 w-5" />
-                  Compose Newsletter
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Send className="h-5 w-5" />
+                    Compose Newsletter
+                  </div>
+                  <Dialog open={isCreateTemplateOpen} onOpenChange={setIsCreateTemplateOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Save as Template
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Save Newsletter Template</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="template-name">Template Name</Label>
+                          <Input
+                            id="template-name"
+                            value={newTemplateName}
+                            onChange={(e) => setNewTemplateName(e.target.value)}
+                            placeholder="e.g., Early Access, Event Reminder"
+                          />
+                        </div>
+                        <div>
+                          <Label>Auto-apply to customers</Label>
+                          <div className="mt-2 space-y-2">
+                            <Badge 
+                              variant="secondary" 
+                              className="mr-2 cursor-pointer"
+                            >
+                              Previous customers
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex justify-end space-x-2">
+                          <Button variant="outline" onClick={() => setIsCreateTemplateOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button onClick={handleSaveAsTemplate}>
+                            Save Template
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
