@@ -13,6 +13,7 @@ export const createOrderInDatabase = async (orderData: {
     quantity: number;
     pricePerTicket: number;
   }>;
+  sendEmailTo?: string; // Add optional email parameter for testing
 }): Promise<string> => {
   try {
     console.log('Creating order in database:', orderData);
@@ -90,7 +91,33 @@ export const createOrderInDatabase = async (orderData: {
     try {
       const ticketIds = await createTicketsForOrder(order.id);
       console.log(`Generated ${ticketIds.length} tickets for order ${order.id}`);
-      toast.success(`Order completed! ${ticketIds.length} tickets generated.`);
+      
+      // Send email if recipient email is provided (for testing environment)
+      if (orderData.sendEmailTo) {
+        console.log(`Sending ticket email to: ${orderData.sendEmailTo}`);
+        
+        try {
+          const { data, error: emailError } = await supabase.functions.invoke('send-ticket-email', {
+            body: {
+              orderId: order.id,
+              recipientEmail: orderData.sendEmailTo
+            }
+          });
+
+          if (emailError) {
+            console.error('Error sending ticket email:', emailError);
+            toast.error('Order completed but failed to send email. Tickets are available in your account.');
+          } else {
+            console.log('Ticket email sent successfully:', data);
+            toast.success(`Order completed! ${ticketIds.length} tickets generated and sent to ${orderData.sendEmailTo}`);
+          }
+        } catch (emailError) {
+          console.error('Error invoking email function:', emailError);
+          toast.error('Order completed but failed to send email. Tickets are available in your account.');
+        }
+      } else {
+        toast.success(`Order completed! ${ticketIds.length} tickets generated.`);
+      }
     } catch (ticketError) {
       console.error('Error generating tickets:', ticketError);
       toast.error('Order completed but ticket generation failed. Please contact support.');

@@ -11,7 +11,7 @@ import { createOrderInDatabase } from '@/services/orderService';
 import { createEventInDatabase } from '@/services/eventDatabaseService';
 import { useTickets } from '@/hooks/useTickets';
 import { toast } from 'sonner';
-import { Ticket, ShoppingCart, Plus } from 'lucide-react';
+import { Ticket, ShoppingCart, Plus, Mail } from 'lucide-react';
 
 const TestingEnvironment = () => {
   const { user } = useAuth();
@@ -81,16 +81,17 @@ const TestingEnvironment = () => {
             quantity: selectedQuantity,
             pricePerTicket: price
           }
-        ]
+        ],
+        sendEmailTo: 'nowotny.konstantin@gmail.com' // Your email for testing
       };
 
       const orderId = await createOrderInDatabase(orderData);
-      toast.success(`Order placed successfully! Order ID: ${orderId.slice(0, 8)}...`);
+      console.log(`Test order placed successfully! Order ID: ${orderId}`);
       
       // Refresh tickets to show the new ones
       setTimeout(() => {
         refetch();
-      }, 1000);
+      }, 2000); // Give more time for email processing
       
     } catch (error) {
       console.error('Error placing test order:', error);
@@ -122,6 +123,16 @@ const TestingEnvironment = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Mail className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-800">Email Notifications Enabled</span>
+            </div>
+            <p className="text-sm text-blue-700">
+              Ticket PDFs with QR codes will be automatically sent to: <strong>nowotny.konstantin@gmail.com</strong>
+            </p>
+          </div>
+
           <div className="flex items-center gap-4">
             <Button 
               onClick={createTestEvent}
@@ -169,8 +180,10 @@ const TestingEnvironment = () => {
                       onClick={() => placeTestOrder(ticketType.id, ticketType.name, ticketType.price)}
                       disabled={ordering}
                       size="sm"
+                      className="flex items-center gap-2"
                     >
                       {ordering ? 'Ordering...' : `Order ${selectedQuantity}x`}
+                      <Mail className="h-3 w-3" />
                     </Button>
                   </div>
                 ))}
