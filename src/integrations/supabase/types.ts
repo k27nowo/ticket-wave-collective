@@ -386,6 +386,57 @@ export type Database = {
           },
         ]
       }
+      tickets: {
+        Row: {
+          created_at: string
+          id: string
+          is_used: boolean
+          order_id: string
+          pdf_url: string | null
+          qr_code: string
+          ticket_number: string
+          ticket_type_id: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          order_id: string
+          pdf_url?: string | null
+          qr_code: string
+          ticket_number: string
+          ticket_type_id: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          order_id?: string
+          pdf_url?: string | null
+          qr_code?: string
+          ticket_number?: string
+          ticket_type_id?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_ticket_type_id_fkey"
+            columns: ["ticket_type_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -394,6 +445,10 @@ export type Database = {
       accept_team_invitation: {
         Args: { invitation_token: string }
         Returns: Json
+      }
+      generate_ticket_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
     }
     Enums: {

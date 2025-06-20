@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getCurrentSoldCount } from './ticketService';
+import { createTicketsForOrder } from './ticketGenerationService';
 
 export const createOrderInDatabase = async (orderData: {
   eventId: string;
@@ -83,6 +84,16 @@ export const createOrderInDatabase = async (orderData: {
         console.error('Error updating sold count:', updateError);
         throw updateError;
       }
+    }
+
+    // Generate tickets with PDFs and QR codes
+    try {
+      const ticketIds = await createTicketsForOrder(order.id);
+      console.log(`Generated ${ticketIds.length} tickets for order ${order.id}`);
+      toast.success(`Order completed! ${ticketIds.length} tickets generated.`);
+    } catch (ticketError) {
+      console.error('Error generating tickets:', ticketError);
+      toast.error('Order completed but ticket generation failed. Please contact support.');
     }
 
     return order.id;
