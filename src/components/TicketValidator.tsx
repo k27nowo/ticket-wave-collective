@@ -136,7 +136,7 @@ const TicketValidator = () => {
                 Previously used on: {new Date(result.usedAt).toLocaleString()}
               </div>
             )}
-          </div>
+          </CardContent>
         </Card>
       )}
     </div>
