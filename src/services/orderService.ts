@@ -57,6 +57,7 @@ export const createOrderInDatabase = async (orderData: {
       .single();
 
     if (orderError) throw orderError;
+    console.log('Order created successfully:', order.id);
 
     // Create order items
     const orderItemsData = orderData.items.map(item => ({
@@ -71,6 +72,7 @@ export const createOrderInDatabase = async (orderData: {
       .insert(orderItemsData);
 
     if (itemsError) throw itemsError;
+    console.log('Order items created successfully');
 
     // Update sold count for each ticket type using direct SQL update
     for (const item of orderData.items) {
@@ -94,7 +96,7 @@ export const createOrderInDatabase = async (orderData: {
       
       // Send email if recipient email is provided (for testing environment)
       if (orderData.sendEmailTo) {
-        console.log(`Sending ticket email to: ${orderData.sendEmailTo}`);
+        console.log(`Attempting to send ticket email to: ${orderData.sendEmailTo}`);
         
         try {
           const { data, error: emailError } = await supabase.functions.invoke('send-ticket-email', {
@@ -103,6 +105,8 @@ export const createOrderInDatabase = async (orderData: {
               recipientEmail: orderData.sendEmailTo
             }
           });
+
+          console.log('Email function response:', { data, error: emailError });
 
           if (emailError) {
             console.error('Error sending ticket email:', emailError);

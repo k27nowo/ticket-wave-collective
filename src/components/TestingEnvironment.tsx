@@ -71,6 +71,7 @@ const TestingEnvironment = () => {
 
     setOrdering(true);
     try {
+      console.log('Starting test order process...');
       const orderData = {
         eventId: testEvent.id,
         userId: user.id,
@@ -85,8 +86,12 @@ const TestingEnvironment = () => {
         sendEmailTo: 'nowotny.konstantin@gmail.com' // Your email for testing
       };
 
+      console.log('Order data prepared:', orderData);
       const orderId = await createOrderInDatabase(orderData);
       console.log(`Test order placed successfully! Order ID: ${orderId}`);
+      
+      // Show immediate feedback
+      toast.success(`Order placed! Check console logs and your email: nowotny.konstantin@gmail.com`);
       
       // Refresh tickets to show the new ones
       setTimeout(() => {
@@ -130,6 +135,9 @@ const TestingEnvironment = () => {
             </div>
             <p className="text-sm text-blue-700">
               Ticket PDFs with QR codes will be automatically sent to: <strong>nowotny.konstantin@gmail.com</strong>
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              Check your browser console for detailed logs about the email sending process.
             </p>
           </div>
 
