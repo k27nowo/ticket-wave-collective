@@ -15,6 +15,7 @@ import Newsletter from "./pages/Newsletter";
 import Team from "./pages/Team";
 import AcceptTeamInvitation from "./pages/AcceptTeamInvitation";
 import Settings from "./pages/Settings";
+import TestingPage from "./pages/TestingPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
@@ -88,6 +89,13 @@ const App = () => (
               <ProtectedRoute>
                 <DashboardLayout>
                   <Settings />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/testing" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <TestingPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

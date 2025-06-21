@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Calendar, DollarSign, Users, Settings, Mail, TrendingUp, Home } from "lucide-react";
+import { Calendar, DollarSign, Users, Settings, Mail, TrendingUp, Home, FlaskConical } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ const navigationItems = [
   { title: "Newsletter", url: "/newsletter", icon: Mail },
   { title: "Team", url: "/team", icon: Users },
   { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Testing", url: "/testing", icon: FlaskConical },
 ];
 
 export function AppSidebar() {
